@@ -1,9 +1,12 @@
 package space.gavinklfong.demo.streamapi;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collector;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.DisplayName;
@@ -49,11 +52,49 @@ public class StreamApiTest {
 			.filter(o -> o.getProducts().stream()
 				.anyMatch(p -> p.getCategory().equals("Baby")))
 			.collect(Collectors.toList());
+
+		assertEquals(50, orders.size());
 	}
 
 	@Test
 	@DisplayName("Obtain a list of product with category = \"Toys\" and then apply 10% discount")
 	public void obtainListOfProductWithCategoryToysAndThenApply10PercentDiscount() {
 		List<Product> products = productRepository.findAll();
+
+		List<Product> discountedProducts = products.stream()
+			.filter(p -> p.getCategory().equals("Toys"))
+			.map(p -> p.withPrice(p.getPrice() * 0.9))
+			.collect(Collectors.toList());
+
+		assertEquals(50, discountedProducts.size());
+		
 	}
+
+	@Test
+	@DisplayName("Obtain a list of products ordered by customer of tier 2 between 01-Feb-2021 and 01-Apr-2021")
+	public void obtainListOfProductsOrderedByCustomerOfTier2Between01Feb2021And01Apr2021() {
+		List<Product> products =  orderRepository.findAll()
+			.stream()
+			.filter(o -> o.getCustomer().getTier() == 2)
+			.filter(o -> o.getOrderDate().compareTo(LocalDate.of(2021, 2, 1)) >= 0)
+  			.filter(o -> o.getOrderDate().compareTo(LocalDate.of(2021, 4, 1)) <= 0)
+			.flatMap(o -> o.getProducts().stream())
+			.distinct()
+			.collect(Collectors.toList());
+
+		assertEquals(19, products.size());
+	}
+
+	@Test
+	@DisplayName("Get the cheapest products of \"Books\" category")
+	public void getCheapestProductsOfBooksCategory() {
+		List<Product> products = productRepository.findAll();
+		Optional<Product> product = products.stream()
+			.filter(p -> p.getCategory().equals("Books"))
+			.min(Comparator.comparing(Product::getPrice));
+		
+			assertTrue(product.isPresent());
+	}
+
+
 }
