@@ -96,5 +96,44 @@ public class StreamApiTest {
 			assertTrue(product.isPresent());
 	}
 
+	@Test
+	@DisplayName("Get the 3 most recent placed order")
+	public void getMostRecentPlacedOrder() {
+		List<Order> orders = orderRepository.findAll();
+		List<Order> recentOrders = orders.stream()
+			.sorted(Comparator.comparing(Order::getOrderDate).reversed())
+			.limit(3)
+			.collect(Collectors.toList());
+
+		assertEquals(3, recentOrders.size());
+	}
+
+	@Test
+	@DisplayName("Get a list of orders which were ordered on 15-Mar-2021, log the order records to the console and then return its product list")
+	public void getOrdersAndPrintToConsoleAndThenReturnProductList() {
+		List<Order> orders = orderRepository.findAll();
+		List<Product> products = orders.stream()
+			.filter(o -> o.getOrderDate().equals(LocalDate.of(2021, 3, 15)))
+			.peek(o -> System.out.println(o.toString()))
+			.flatMap(o -> o.getProducts().stream())
+			.distinct()
+			.collect(Collectors.toList());
+
+		assertEquals(7, products.size());
+	}
+
+	@Test
+	@DisplayName("Calculate total lump sum of all orders placed in Feb 2021")
+	public void calculateTotalLumpSumOfAllOrdersPlacedInFeb2021() {
+		List<Order> orders = orderRepository.findAll();
+		Double sum = orders.stream()
+			.filter(o -> o.getOrderDate().compareTo(LocalDate.of(2021, 2, 1)) >= 0)
+  			.filter(o -> o.getOrderDate().compareTo(LocalDate.of(2021, 3, 1)) <= 0)
+			.flatMap(o -> o.getProducts().stream())
+				.mapToDouble(p -> p.getPrice())
+				.sum();
+
+		assertEquals(11995.36f, sum.doubleValue(), 0.001);		
+	}
 
 }
